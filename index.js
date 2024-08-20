@@ -13,10 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // Add this line for body parsing
 
+
 const categoryRoute = require("./routes/categoryRoute");
 const ProductRoute = require("./routes/ProductRoute");
 const CartRoute = require("./routes/CartRoute");
-
+const PaymentRoute = require("./Payment/PaymentRoute");
 const SignRoute = require("./routes/SignRoute");
 // Connect with db
 dbConnection();
@@ -24,6 +25,9 @@ dbConnection();
 app.get("/", (req, res) => {
   res.send("Welcome our to online Electronic E-commerce API...");
 });
+
+//for payment
+app.use("/api/v1/paymob" , PaymentRoute )
 
 // Mount Routes
 app.use("/api/v1/categories", categoryRoute);

@@ -14,7 +14,7 @@ const { formatDistanceToNow } = require("date-fns");
 // asyncHandler or try and catch or then catch
 exports.createProduct = asyncHandler(async (req, res) => {
   try {
-    const { Name, Description, images, category } = req.body;
+    const { Name, Description, images, category , price } = req.body;
 
     // Find the category by name and get its ObjectId
     const TargetCategory = await Category.findOne({ Name: category });
@@ -28,6 +28,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
       Description,
       images,
       category: TargetCategory._id, // Use the ObjectId of the category
+      price
     });
 
     // Respond with the newly created product

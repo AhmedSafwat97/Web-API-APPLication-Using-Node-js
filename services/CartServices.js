@@ -7,80 +7,82 @@ const Product = require('../models/ProductModel');
 // @route   POST /api/v1/cart/add
 // @access  For Users
 exports.addToCart = asyncHandler(async (req, res) => {
-    // Extract token from the Authorization header
-    const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
-  
-    if (!token) {
-      return res.status(401).json({ msg: 'Not authorized, token failed' });
+  // Extract token from the Authorization header
+  const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ msg: 'Not authorized, token failed' });
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Extract productId and quantity from headers
+    const productId = req.headers['productid'];
+    const quantity = parseInt(req.headers['quantity'], 10);
+
+    // Validate input
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
     }
-  
-    try {
-      // Verify the token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId;
-  
-      // Extract productId and quantity from headers
-      const productId = req.headers['productid'];
-      const quantity = parseInt(req.headers['quantity'], 10);
-  
-      // Validate input
-      if (!productId) {
-        return res.status(400).json({ error: 'Product ID is required' });
-      }
-  
-      if (isNaN(quantity) || quantity <= 0) {
-        return res.status(400).json({ error: 'Quantity must be a positive number' });
-      }
-  
-      // Check if the product exists
-      const product = await Product.findById(productId);
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
-  
-      // Find or create the cart for the user
-      let cart = await Cart.findOne({ user: userId }).populate('items.product');
-      if (!cart) {
-        cart = new Cart({ user: userId, items: [] });
-      }
-  
-      // Find the item in the cart
-      let updatedItem;
-      const existingItem = cart.items.find(item => item.product.toString() === productId);
-  
-      if (existingItem) {
-        // Update quantity to the exact value provided
-        existingItem.quantity = quantity;
-        updatedItem = existingItem; // Capture the updated item
-      } else {
-        // Add new product to the cart with the specified quantity
-        updatedItem = { product: productId, quantity };
-        cart.items.push(updatedItem);
-      }
-  
-      // Save the cart
-      await cart.save();
-  
-      // Calculate total price and quantity
-      const totalPrice = cart.items.reduce((sum, item) => {
-        // Assuming that item.product is a populated object with a price field
-        return sum + (item.product.price * item.quantity);
-      }, 0);
-  
-      const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-  
-      // Respond with the updated cart and item details
-      res.status(200).json({
-        totalPrice,
-        totalQuantity,
-        CartItems: cart,
-        UpdatedItem: updatedItem,
-        message: existingItem ? 'Quantity updated successfully' : 'Product added successfully'
-      });
-    } catch (error) {
-      res.status(400).json({ error: error.message });
+
+    if (isNaN(quantity) || quantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be a positive number' });
     }
-  });
+
+    // Check if the product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Find or create the cart for the user
+    let cart = await Cart.findOne({ user: userId }).populate('items.product');
+    if (!cart) {
+      cart = new Cart({ user: userId, items: [] });
+    }
+
+    // Find the item in the cart
+    let updatedItem;
+    const existingItem = cart.items.find(item => item.product._id.toString() === productId);
+
+    if (existingItem) {
+      // Update quantity to the exact value provided
+      existingItem.quantity = quantity;
+      updatedItem = existingItem; // Capture the updated item
+    } else {
+      // Add new product to the cart with the specified quantity
+      updatedItem = { product: productId, quantity };
+      cart.items.push(updatedItem);
+    }
+
+    // Calculate total price and quantity
+    const totalPrice = cart.items.reduce((sum, item) => {
+      const product = item.product;
+      // Ensure price is a number
+      const price = parseFloat(product.price) || 0;
+      return sum + (price * item.quantity);
+    }, 0);
+
+    const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Save the cart
+    await cart.save();
+
+    // Respond with the updated cart and item details
+    res.status(200).json({
+      totalPrice,
+      totalQuantity,
+      CartItems: cart,
+      UpdatedItem: updatedItem,
+      message: existingItem ? 'Quantity updated successfully' : 'Product added successfully'
+    });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 
 // @desc    Add product to cart

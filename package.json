@@ -11,6 +11,7 @@
   "author": "ahmed Safwat",
   "license": "ISC",
   "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
     "axios": "^1.5.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",

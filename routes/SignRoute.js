@@ -3,11 +3,8 @@ const express = require("express");
 const {
   Signup,
   getUserData,
-  updateUserInfo,
-  // updateprofileimage,
   login,
-  // getAuthorById,
-} = require("../services/SignupServer");
+} = require("../services/SignupServices");
 
 
 const router = express.Router();
@@ -20,7 +17,6 @@ const { uploadProfileImage } = require("../middleware/UploadImageMiddleware");
 router.post("/signup", Signup);
 router.post("/login", login);
 router.get("/LoginUser", getUserData);
-router.put("/:id", updateUserInfo);
 
 // router.get("/author/:id", getAuthorById);
 

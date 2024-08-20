@@ -99,8 +99,7 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
     }
 
     // Step 4: Generate payment link using iframe with a redirect URL
-    const successUrl = 'http://yourwebsite.com/payment-success'; // Replace with your actual success URL
-    const paymentLink = `https://accept.paymob.com/api/acceptance/iframes/862705?payment_token=${paymentKey}&return_url=${encodeURIComponent(successUrl)}&iframe_close=true`;
+    const paymentLink = `https://accept.paymob.com/api/acceptance/iframes/862705?payment_token=${paymentKey}&iframe_close=true`;
 
     res.status(201).json({
       paymentLink, // Return the payment link to the client
@@ -114,4 +113,4 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
       details: error.response ? error.response.data : null,
     });
   }
-});
+}); 

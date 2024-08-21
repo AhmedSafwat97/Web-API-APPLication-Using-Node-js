@@ -1,13 +1,14 @@
 const axios = require('axios');
 const asyncHandler = require('express-async-handler');
 const Cart = require('../models/CartModel');
+const ConfirmedCart = require('../models/ConfirmedCartsModel');
+const jwt = require('jsonwebtoken');
 
-// Define Paymob credentials
 const PAYMOB_API_URL = 'https://accept.paymob.com/api';
-const API_KEY = process.env.PAYMOB_API_KEY; // Your Paymob API key
-const INTEGRATION_ID = process.env.PAYMOB_INTEGRATION_ID; // Your Paymob integration ID
+const API_KEY = process.env.PAYMOB_API_KEY;
+const INTEGRATION_ID = process.env.PAYMOB_INTEGRATION_ID;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Create an Axios instance for API calls
 const apiClient = axios.create({
   baseURL: PAYMOB_API_URL,
   headers: {
@@ -15,11 +16,15 @@ const apiClient = axios.create({
   }
 });
 
-// @desc    Create Paymob Payment Link
-// @route   POST /api/v1/paymob/:cartId
-// @access  Private
 exports.createPaymentLink = asyncHandler(async (req, res) => {
   const { cartId } = req.params;
+  const {
+    floor,
+    street,
+    building,
+    city,
+    last_name
+}= req.body;
 
   if (!cartId) {
     return res.status(400).json({ error: 'Cart ID is required' });
@@ -30,87 +35,81 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
     return res.status(401).json({ error: 'Authorization token is required' });
   }
 
+  let decodedToken;
+  try {
+    decodedToken = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  const Name = decodedToken.name;
+  const Email = decodedToken.email;
+  const Phone = decodedToken.Phone;
+
   try {
     const cart = await Cart.findOne({ _id: cartId }).populate('items.product');
     if (!cart) {
       return res.status(404).json({ error: 'Cart not found' });
     }
 
-    const totalAmount = cart.items.reduce((sum, item) => {
-      return sum + item.product.price * item.quantity;
-    }, 0);
+    const totalAmount = cart.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-    console.log('Total Amount:', totalAmount);
-
-    // Step 1: Authenticate with Paymob to get a payment token
     const authResponse = await apiClient.post('/auth/tokens', { api_key: API_KEY });
     const authToken = authResponse.data.token;
 
-    if (!authToken) {
-      throw new Error('Failed to authenticate with Paymob');
-    }
-
-    // Step 2: Create an order
     const orderResponse = await apiClient.post('/ecommerce/orders', {
       auth_token: authToken,
       delivery_needed: false,
-      amount_cents: totalAmount * 100, // Convert to cents
+      amount_cents: totalAmount * 100,
       currency: 'EGP',
       items: cart.items.map(item => ({
         name: item.product.Name,
-        amount_cents: item.product.price * item.quantity * 100, // Convert to cents
+        amount_cents: item.product.price * item.quantity * 100,
         quantity: item.quantity,
       })),
     });
     const orderId = orderResponse.data.id;
 
-    if (!orderId) {
-      throw new Error('Failed to create order with Paymob');
-    }
+        // Update the cart with the orderId
+        cart.orderId = orderId;
 
-    // Step 3: Generate a payment key
+        // Save the updated cart
+        await cart.save();
+
+    console.log("order id" , orderId);
+
     const paymentKeyResponse = await apiClient.post('/acceptance/payment_keys', {
       auth_token: authToken,
-      amount_cents: totalAmount * 100, // Convert to cents
-      expiration: 3600, // 1 hour expiration
+      amount_cents: totalAmount * 100,
+      expiration: 3600,
       order_id: orderId,
       billing_data: {
-        apartment: "NA", // Required fields by Paymob, adjust as necessary
-        email: "email@example.com", // Replace with actual data
-        floor: "NA",
-        first_name: "NA",
-        street: "NA",
-        building: "NA",
-        phone_number: "+201000000000",
-        shipping_method: "NA",
-        postal_code: "NA",
-        city: "NA",
-        country: "NA",
-        last_name: "NA",
-        state: "NA"
+        apartment: 'NA',
+        email: Email,
+        floor: floor || 'NA',
+        first_name: Name || 'NA',
+        street: street || 'NA',
+        building: building || 'NA',
+        phone_number: Phone || '+201000000000',
+        shipping_method: 'NA',
+        city: city || 'NA',
+        last_name: last_name || 'NA',
+        country: 'Egypt'
       },
       currency: 'EGP',
       integration_id: INTEGRATION_ID,
     });
+
     const paymentKey = paymentKeyResponse.data.token;
 
-    if (!paymentKey) {
-      throw new Error('Failed to generate payment key with Paymob');
-    }
+    const paymentLink = `https://accept.paymob.com/api/acceptance/iframes/862704?payment_token=${paymentKey}&iframe_close=true`;
 
-    // Step 4: Generate payment link using iframe with a redirect URL
-    const paymentLink = `https://accept.paymob.com/api/acceptance/iframes/862705?payment_token=${paymentKey}&iframe_close=true`;
+    // Immediately send the payment link to the client while polling for status
+    res.status(201).json({ paymentLink });
 
-    res.status(201).json({
-      paymentLink, // Return the payment link to the client
-    });
   } catch (error) {
     console.error('Payment link creation failed:', error);
-
-    // Sending back a more detailed error response
-    res.status(500).json({
-      error: error.message,
-      details: error.response ? error.response.data : null,
-    });
+    res.status(500).json({ error: error.message, details: error.response ? error.response.data : null });
   }
-}); 
+});
+

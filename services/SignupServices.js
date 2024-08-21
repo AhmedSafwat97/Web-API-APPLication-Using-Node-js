@@ -55,7 +55,8 @@ exports.login = asyncHandler(async (req, res, next) => {
         sub : "Login Token",
         userId : user._id ,
         email : user.Email ,
-        Name : user.Name,
+        FName : user.Name,
+        LName : user.Name,
         Phone : user.Phone
       }
 

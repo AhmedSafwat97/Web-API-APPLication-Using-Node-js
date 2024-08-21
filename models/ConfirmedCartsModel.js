@@ -1,8 +1,7 @@
-
 const mongoose = require('mongoose');
 
-// Define the Cart schema
-const cartSchema = new mongoose.Schema({
+// Define the ConfirmedCart schema
+const confirmedCartSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -22,20 +21,13 @@ const cartSchema = new mongoose.Schema({
       },
     },
   ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  orderId : {
-    type: String  
-  } , 
-  updatedAt: {
+  purchasedAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Create the Cart model
-const Cart = mongoose.model('Cart', cartSchema);
+// Create the ConfirmedCart model
+const ConfirmedCart = mongoose.model('ConfirmedCart', confirmedCartSchema);
 
-module.exports = Cart;
+module.exports = ConfirmedCart;

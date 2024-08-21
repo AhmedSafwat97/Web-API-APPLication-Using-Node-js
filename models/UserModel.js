@@ -26,7 +26,13 @@ const userSchema = new mongoose.Schema({
     passwordResetCode: String,
     passwordResetExpires: Date,
     passwordResetVerified: Boolean,
-    Name: {
+    FName: {
+      type: String,
+      minlength: [3, 'Too short Name'],
+      max: [100, 'Too long Name'],
+      required: [true, 'Name is required'],
+    },  
+    LName: {
       type: String,
       minlength: [3, 'Too short Name'],
       max: [100, 'Too long Name'],

@@ -4,7 +4,7 @@ const asyncHandler = require("express-async-handler");
 
 const Category = require("../models/categoryModel");
 
-const Product = require('../models/ProductModel');
+const Brand = require('../models/brandModel');
 
 
 // @desc    Create category
@@ -69,13 +69,24 @@ exports.getCategory = asyncHandler(async (req, res) => {
   }
 
   // Find all products that belong to this category
-  const products = await Product.find({ category: category.Name });
+  const brands = await Brand.find({ category: id }); // Use 'id' here, not category.Name
+
+  // Map over the brands to include only relevant details
+  const brandsData = brands.map(brand => ({
+    brandID: brand._id,
+    brandName: brand.Name,
+    brandImage: brand.Image,
+    // Add more fields if needed
+  }));
+
 
   // Send the category data along with the products
   res.status(200).json({
     data: {
-      CategoryData : category,
-      products
+      categoryID: category._id,
+      categoryName: category.Name,
+      categoryImage: category.Image, // Adjust according to your field name for image
+      brandsData,
     }
   });
 });

@@ -31,7 +31,12 @@ const ProductSchema = new mongoose.Schema(
       ref: 'Category',
       required: [true, 'Product must belong to a category'],
     },
-    price : {
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Brand', // Reference to the Brand model
+      required: [true, 'Product must belong to a brand'], // Optional based on your requirement
+    },
+    price: {
       type: Number,
       required: [true, 'Price is required'],
       min: [0, 'Price must be greater than or equal to 0'],

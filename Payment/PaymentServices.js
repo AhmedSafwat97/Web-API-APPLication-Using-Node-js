@@ -105,7 +105,7 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
     const paymentLink = `https://accept.paymob.com/api/acceptance/iframes/862704?payment_token=${paymentKey}&iframe_close=true`;
 
     // Immediately send the payment link to the client while polling for status
-    res.status(201).json({ paymentLink });
+    res.status(201).json({ paymentLink , status : "Success" });
 
   } catch (error) {
     console.error('Payment link creation failed:', error);

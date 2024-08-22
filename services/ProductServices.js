@@ -6,20 +6,27 @@ const Product = require("../models/ProductModel");
 
 const Category = require("../models/categoryModel");
 
+const Brand = require("../models/brandModel");
+
 const { formatDistanceToNow } = require("date-fns");
 
-// @desc    Create Product
-// @route   post  /api/v1/Product/
-// @access  Private
-// asyncHandler or try and catch or then catch
+// // @desc    Create Product
+// // @route   post  /api/v1/Product/
+// // @access  Private
+// // asyncHandler or try and catch or then catch
 exports.createProduct = asyncHandler(async (req, res) => {
   try {
-    const { Name, Description, images, category , price } = req.body;
+    const { Name, Description, images, category , price , brand } = req.body;
 
     // Find the category by name and get its ObjectId
     const TargetCategory = await Category.findOne({ Name: category });
     if (!TargetCategory) {
       return res.status(404).json({ error: 'Category not found' });
+    }
+
+    const TargetBrand = await Brand.findOne({ Name: brand });
+    if (!TargetBrand) {
+      return res.status(404).json({ error: 'brand not found' });
     }
 
     // Create the Product
@@ -28,7 +35,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
       Description,
       images,
       category: TargetCategory._id, // Use the ObjectId of the category
-      price
+      price ,
+      brand : TargetBrand._id
     });
 
     // Respond with the newly created product
@@ -63,6 +71,87 @@ exports.getProducts = asyncHandler(async (req, res) => {
   res.status(200).json({ results: Products.length, TotalProducts , PageNumber , TotalPages ,data: Products });
 });
 
+
+// @desc    Get list of Products
+// @route   GET /api/v1/Products
+// make pagination GET /api/v1/Products?page=1&limit=4
+// to change category id in to category name we use populate
+// @access  Public
+exports.FilterProducts = asyncHandler(async (req, res) => {
+  try {
+    const { name, categoryName, brandName, minPrice, maxPrice } = req.query;
+    const PageNumber = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (PageNumber - 1) * limit;
+
+    // Build the query object
+    const query = {};
+
+    // Search by product name
+    if (name) {
+      query.Name = { $regex: new RegExp(name, 'i') }; // Case-insensitive search
+    }
+
+    // Search by category
+    if (categoryName) {
+      const categories = await Category.find({ Name: { $regex: new RegExp(categoryName, 'i') } });
+      const categoryIds = categories.map(category => category._id);
+      if (categoryIds.length > 0) {
+        query.category = { $in: categoryIds };
+      } else {
+        // If no categories match, return an empty result set
+        return res.status(200).json({ results: 0, TotalProducts: 0, PageNumber, TotalPages: 0, data: [] });
+      }
+    }
+
+    // Search by brand
+    if (brandName) {
+      const brands = await Brand.find({ Name: { $regex: new RegExp(brandName, 'i') } });
+      const brandIds = brands.map(brand => brand._id);
+      if (brandIds.length > 0) {
+        query.brand = { $in: brandIds };
+      } else {
+        // If no brands match, return an empty result set
+        return res.status(200).json({ results: 0, TotalProducts: 0, PageNumber, TotalPages: 0, data: [] });
+      }
+    }
+
+    // Search by price range
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) {
+        query.price.$gte = parseFloat(minPrice); // Greater than or equal to minPrice
+      }
+      if (maxPrice) {
+        query.price.$lte = parseFloat(maxPrice); // Less than or equal to maxPrice
+      }
+    }
+
+    // Find total products matching the query for pagination
+    const TotalProducts = await Product.countDocuments(query);
+    const TotalPages = Math.ceil(TotalProducts / limit);
+
+    // Find the products based on the built query
+    const Products = await Product.find(query)
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'category', select: 'Name -_id' })
+      .populate({ path: 'brand', select: 'Name -_id' });
+
+    res.status(200).json({ 
+      results: Products.length, 
+      TotalProducts, 
+      PageNumber, 
+      TotalPages, 
+      data: Products 
+    });
+
+  } catch (error) {
+    res.status(400).json({ error: error.message, message: "Failed to get products" });
+  }
+});
+
+
 // @desc    Get specific category by id
 // @route   GET /api/v1/Product/:id
 // @access  Public
@@ -83,6 +172,25 @@ exports.getProduct = asyncHandler(async (req, res) => {
     res.status(400).json({ error: error.message , message : "failed to get this product" });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // @desc    Update specific category
 // @route   PUT /api/v1/Product/:id

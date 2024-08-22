@@ -28,7 +28,7 @@ const cartSchema = new mongoose.Schema({
   },
   orderId : {
     type: String  
-  } , 
+  } ,
   updatedAt: {
     type: Date,
     default: Date.now,

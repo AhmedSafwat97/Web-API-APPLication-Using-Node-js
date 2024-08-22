@@ -6,6 +6,4 @@ const { addToCart , getCartItems ,removeFromCart } = require('../services/CartSe
 router.route("/").get(getCartItems).post(addToCart)
 .delete(removeFromCart);
 
-router.route("DecreaseQuantity").delete(removeFromCart);
-
 module.exports = router;

@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // Add this line for body parsing
 
-
+// routes
 const categoryRoute = require("./routes/categoryRoute");
 const ProductRoute = require("./routes/ProductRoute");
 const CartRoute = require("./routes/CartRoute");

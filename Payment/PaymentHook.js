@@ -40,7 +40,7 @@ exports.paymentWebhook = asyncHandler(async (req, res) => {
       await Cart.findOneAndDelete({ orderId: order });
 
       // Redirect to success page
-      return res.redirect(`${process.env.BasE_LINK}/${process.env.ROUTEING_NAME}`);
+      return res.redirect(`${process.env.REDIRECT_LINK}`);
     } else {
       // Redirect to failure page
       return res.redirect(`https://accept.paymobsolutions.com/api/acceptance/post_pay`);

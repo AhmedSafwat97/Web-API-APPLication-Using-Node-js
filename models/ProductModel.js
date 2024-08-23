@@ -40,6 +40,14 @@ const ProductSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Price is required'],
       min: [0, 'Price must be greater than or equal to 0'],
+    } , 
+    Reviews : {
+      type: Number,
+      default: 0
+    }, 
+    Rating : {
+      type: Number,
+      default: 0
     }
   },
   { timestamps: true }

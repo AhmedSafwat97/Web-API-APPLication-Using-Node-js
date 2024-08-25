@@ -19,8 +19,12 @@ const userSchema = new mongoose.Schema({
     },
     password: {
       type: String,
-      minlength: [6, 'Too short password'],
+      minlength: [8, 'Too short password'],
       required: [true, 'password required'],
+      match: [
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+        'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character',
+      ],
     },
     passwordChangedAt: Date,
     passwordResetCode: String,

@@ -20,7 +20,7 @@ exports.Signup = asyncHandler(async (req, res, next) => {
   
     if (existingUser) {
       // If the email already exists, return an error
-      return res.status(400).json({ error: 'Email already in use' });
+      return res.status(400).json({ message: 'Email already in use' });
     }
   
     // If the email is unique, create the new user

@@ -36,14 +36,13 @@ exports.login = asyncHandler(async (req, res, next) => {
 
     const { Email } = req.body;
 
-    try {
-          // 1) check if password and email in the body (validation)
+    // 1) check if password and email in the body (validation)
     // 2) check if user exist & check if password is correct
     const user = await User.findOne({ Email });
   
     if (!user) {
        // If the email already exists, return an error
-       return res.status(400).json({ error: 'invalid Email' });
+       return res.status(400).json({ message: 'invalid Email' });
     }
 
     // Compare the password
@@ -68,13 +67,6 @@ exports.login = asyncHandler(async (req, res, next) => {
     delete user._doc.password;
     // 4) send response to client side
     res.status(200).json({ data: user, token , message : "user logged in successfully" });
-
-
-    
-    } catch (error) {
-      res.status(400).json({ message : "Invalid Email Or Password" });
-    }
-
 
   });
 

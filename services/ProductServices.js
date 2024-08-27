@@ -222,11 +222,66 @@ exports.getRelatedProducts = asyncHandler(async (req, res) => {
 });
 
 
+exports.getSaleProducts = asyncHandler(async (req, res) => {
+  try {
+    const PageNumber = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 6;
+    const skip = (PageNumber - 1) * limit;
+
+    // Count total products that have a discount
+    const TotalProducts = await Product.countDocuments({ HasDiscount: true });
+    const TotalPages = Math.ceil(TotalProducts / limit);
+
+    // Filter products by discount
+    const Products = await Product.find({ HasDiscount: true })
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'category', select: 'Name -_id' });
+
+    res.status(200).json({
+      results: Products.length,
+      TotalProducts,
+      PageNumber,
+      TotalPages,
+      data: Products
+    });
+    
+  } catch (error) {
+    res.status(400).json({ error: error.message, message: "Failed to get products" });
+  }
+});
 
 
 
 
+exports.getBestSellerProducts = asyncHandler(async (req, res) => {
+  try {
+    const PageNumber = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 6;
+    const skip = (PageNumber - 1) * limit;
 
+    // Count total products that have a discount
+    const TotalProducts = await Product.countDocuments({ bestseller : true });
+    const TotalPages = Math.ceil(TotalProducts / limit);
+
+    // Filter products by discount
+    const Products = await Product.find({ bestseller: true })
+      .skip(skip)
+      .limit(limit)
+      .populate({ path: 'category', select: 'Name -_id' });
+
+    res.status(200).json({
+      results: Products.length,
+      TotalProducts,
+      PageNumber,
+      TotalPages,
+      data: Products
+    });
+    
+  } catch (error) {
+    res.status(400).json({ error: error.message, message: "Failed to get products" });
+  }
+});
 
 
 

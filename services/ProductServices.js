@@ -253,22 +253,27 @@ exports.getSaleProducts = asyncHandler(async (req, res) => {
 
 
 
-
 exports.getBestSellerProducts = asyncHandler(async (req, res) => {
   try {
     const PageNumber = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 6;
     const skip = (PageNumber - 1) * limit;
 
-    // Count total products that have a discount
-    const TotalProducts = await Product.countDocuments({ bestseller : true });
+    // Count total products that are bestsellers
+    const TotalProducts = await Product.countDocuments({ bestseller: true });
     const TotalPages = Math.ceil(TotalProducts / limit);
 
-    // Filter products by discount
-    const Products = await Product.find({ bestseller: true })
-      .skip(skip)
-      .limit(limit)
-      .populate({ path: 'category', select: 'Name -_id' });
+    // Sample a larger number of products to ensure randomness
+    const randomSampleSize = Math.min(TotalProducts, 100); // Adjust the sample size based on your needs
+
+    // Use aggregation to get a random sample
+    const randomProducts = await Product.aggregate([
+      { $match: { bestseller: true } },
+      { $sample: { size: randomSampleSize } } // Randomly select a sample of products
+    ]);
+
+    // Apply pagination to the randomly selected products
+    const Products = randomProducts.slice(skip, skip + limit);
 
     res.status(200).json({
       results: Products.length,
@@ -277,12 +282,11 @@ exports.getBestSellerProducts = asyncHandler(async (req, res) => {
       TotalPages,
       data: Products
     });
-    
+
   } catch (error) {
     res.status(400).json({ error: error.message, message: "Failed to get products" });
   }
 });
-
 
 
 

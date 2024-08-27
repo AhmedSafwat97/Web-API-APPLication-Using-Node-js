@@ -232,11 +232,17 @@ exports.getSaleProducts = asyncHandler(async (req, res) => {
     const TotalProducts = await Product.countDocuments({ HasDiscount: true });
     const TotalPages = Math.ceil(TotalProducts / limit);
 
-    // Filter products by discount
-    const Products = await Product.find({ HasDiscount: true })
-      .skip(skip)
-      .limit(limit)
-      .populate({ path: 'category', select: 'Name -_id' });
+    // Sample a larger number of products to ensure randomness
+    const randomSampleSize = Math.min(TotalProducts, 100); // Adjust the sample size based on your needs
+
+    // Use aggregation to get a random sample
+    const randomProducts = await Product.aggregate([
+      { $match: { HasDiscount: true } },
+      { $sample: { size: randomSampleSize } } // Randomly select a sample of products
+    ]);
+
+    // Apply pagination to the randomly selected products
+    const Products = randomProducts.slice(skip, skip + limit);
 
     res.status(200).json({
       results: Products.length,

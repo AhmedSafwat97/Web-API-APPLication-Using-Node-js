@@ -93,8 +93,8 @@ exports.getProducts = asyncHandler(async (req, res) => {
 exports.FilterProducts = asyncHandler(async (req, res) => {
   try {
     const { name, categoryName, brandName, minPrice, maxPrice } = req.query;
-    const PageNumber = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 6;
+    const PageNumber = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 6;
     const skip = (PageNumber - 1) * limit;
 
     // Build the query object
@@ -144,19 +144,25 @@ exports.FilterProducts = asyncHandler(async (req, res) => {
     const TotalProducts = await Product.countDocuments(query);
     const TotalPages = Math.ceil(TotalProducts / limit);
 
-    // Find the products based on the built query
-    const Products = await Product.find(query)
-      .skip(skip)
-      .limit(limit)
-      .populate({ path: 'category', select: 'Name -_id' })
-      .populate({ path: 'brand', select: 'Name -_id' });
+    // Use aggregation to randomly sort and limit the products
+    const Products = await Product.aggregate([
+      { $match: query },           // Match the products based on the query
+      { $sample: { size: limit } }  // Randomly select `limit` products
+    ])
+    .exec(); // Execute the aggregation
+
+    // Populate the category and brand fields
+    const populatedProducts = await Product.populate(Products, [
+      { path: 'category', select: 'Name -_id' },
+      { path: 'brand', select: 'Name -_id' }
+    ]);
 
     res.status(200).json({ 
-      results: Products.length, 
+      results: populatedProducts.length, 
       TotalProducts, 
       PageNumber, 
       TotalPages, 
-      data: Products 
+      data: populatedProducts 
     });
 
   } catch (error) {
@@ -187,13 +193,11 @@ exports.getProduct = asyncHandler(async (req, res) => {
 });
 
 
-
 exports.getRelatedProducts = asyncHandler(async (req, res) => {
   try {
-    const { categoryName } = req.params; // Get categoryId from URL parameters
+    const { categoryName } = req.params; // Get categoryName from URL parameters
     
     const query = {};
-
 
     if (categoryName) {
       const categories = await Category.find({ Name: { $regex: new RegExp(categoryName, 'i') } });
@@ -202,18 +206,25 @@ exports.getRelatedProducts = asyncHandler(async (req, res) => {
         query.category = { $in: categoryIds };
       } else {
         // If no categories match, return an empty result set
-        return res.status(200).json({  data: [] });
+        return res.status(200).json({ data: [] });
       }
     }
 
-    // Limit the query to return exactly 4 products
-    const Products = await Product.find(query)
-      .limit(4) // Always limit to 4 products
-      .populate({ path: 'category', select: 'Name -_id' })
-      .populate({ path: 'brand', select: 'Name -_id' });
+    // Use aggregation to get a random sample of 4 related products
+    const Products = await Product.aggregate([
+      { $match: query },            // Match the products based on the category
+      { $sample: { size: 4 } }       // Randomly select 4 products
+    ])
+    .exec(); // Execute the aggregation
+
+    // Populate the category and brand fields
+    const populatedProducts = await Product.populate(Products, [
+      { path: 'category', select: 'Name -_id' },
+      { path: 'brand', select: 'Name -_id' }
+    ]);
 
     res.status(200).json({ 
-      data: Products 
+      data: populatedProducts 
     });
 
   } catch (error) {

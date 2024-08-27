@@ -16,7 +16,14 @@ const { formatDistanceToNow } = require("date-fns");
 // // asyncHandler or try and catch or then catch
 exports.createProduct = asyncHandler(async (req, res) => {
   try {
-    const { Name, Description, images, category , price , brand } = req.body;
+    const { Name,
+       Description, 
+       images, category 
+       , price , brand ,
+       bestseller , Rating ,
+       Reviews , HasDiscount ,
+       discount , PriceBeforeDiscount
+      } = req.body;
 
     // Find the category by name and get its ObjectId
     const TargetCategory = await Category.findOne({ Name: category });
@@ -36,7 +43,13 @@ exports.createProduct = asyncHandler(async (req, res) => {
       images,
       category: TargetCategory._id, // Use the ObjectId of the category
       price ,
-      brand : TargetBrand._id
+      brand : TargetBrand._id,
+      bestseller ,
+      Rating ,
+      Reviews ,
+      HasDiscount ,
+      discount ,
+      PriceBeforeDiscount
     });
 
     // Respond with the newly created product
@@ -152,7 +165,7 @@ exports.FilterProducts = asyncHandler(async (req, res) => {
 });
 
 
-// @desc    Get specific category by id
+// @desc    Get specific Product by id
 // @route   GET /api/v1/Product/:id
 // @access  Public
 
@@ -175,8 +188,38 @@ exports.getProduct = asyncHandler(async (req, res) => {
 
 
 
+exports.getRelatedProducts = asyncHandler(async (req, res) => {
+  try {
+    const { categoryName } = req.params; // Get categoryId from URL parameters
+    
+    const query = {};
 
 
+    if (categoryName) {
+      const categories = await Category.find({ Name: { $regex: new RegExp(categoryName, 'i') } });
+      const categoryIds = categories.map(category => category._id);
+      if (categoryIds.length > 0) {
+        query.category = { $in: categoryIds };
+      } else {
+        // If no categories match, return an empty result set
+        return res.status(200).json({  data: [] });
+      }
+    }
+
+    // Limit the query to return exactly 4 products
+    const Products = await Product.find(query)
+      .limit(4) // Always limit to 4 products
+      .populate({ path: 'category', select: 'Name -_id' })
+      .populate({ path: 'brand', select: 'Name -_id' });
+
+    res.status(200).json({ 
+      data: Products 
+    });
+
+  } catch (error) {
+    res.status(400).json({ error: error.message, message: "Failed to get related products" });
+  }
+});
 
 
 

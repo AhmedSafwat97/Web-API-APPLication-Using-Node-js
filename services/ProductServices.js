@@ -255,7 +255,9 @@ exports.getSaleProducts = asyncHandler(async (req, res) => {
     ]);
 
     // Apply pagination to the randomly selected products
-    const Products = randomProducts.slice(skip, skip + limit);
+    const Products = randomProducts.slice(skip, skip + limit)
+    .populate({ path: 'category', select: 'Name -_id' })
+    .populate({ path: 'brand', select: 'Name -_id' });;
 
     res.status(200).json({
       results: Products.length,

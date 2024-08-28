@@ -63,6 +63,9 @@ const ProductSchema = new mongoose.Schema(
     discount : {
       type: Number,
       default: 0
+    } ,
+    IsFav : {
+      type: Boolean,
     }
   },
   { timestamps: true }

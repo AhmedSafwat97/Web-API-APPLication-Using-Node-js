@@ -32,6 +32,10 @@ exports.addToWishlist = asyncHandler(async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    // Update the product's isFav field to true
+    product.IsFav = true;
+    await product.save();
+
     // Find or create the Wishlist for the user
     let wishlist = await Wishlist.findOne({ user: userId }).populate('items.product');
     if (!wishlist) {
@@ -40,7 +44,6 @@ exports.addToWishlist = asyncHandler(async (req, res) => {
 
     // Check if the product is already in the wishlist
     const existingItem = wishlist.items.find(item => item.product._id.toString() === productId);
-
     if (existingItem) {
       return res.status(200).json({ message: 'Product already in the wishlist' });
     }

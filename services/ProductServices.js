@@ -197,27 +197,26 @@ exports.getProduct = asyncHandler(async (req, res) => {
 
 exports.getRelatedProducts = asyncHandler(async (req, res) => {
   try {
-    const { categoryName } = req.params; // Get categoryName from URL parameters
-    
-    const query = {};
+    const { id } = req.params; // Get product ID from URL parameters
 
-    if (categoryName) {
-      const categories = await Category.find({ Name: { $regex: new RegExp(categoryName, 'i') } });
-      const categoryIds = categories.map(category => category._id);
-      if (categoryIds.length > 0) {
-        query.category = { $in: categoryIds };
-      } else {
-        // If no categories match, return an empty result set
-        return res.status(200).json({ data: [] });
-      }
+    // Find the product by ID to get its category and other details
+    const product = await Product.findById(id).populate('category brand');
+
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
     }
+
+    // Query to find related products by category (excluding the current product)
+    const query = {
+      category: product.category._id,
+      _id: { $ne: id } // Exclude the current product from the results
+    };
 
     // Use aggregation to get a random sample of 4 related products
     const Products = await Product.aggregate([
       { $match: query },            // Match the products based on the category
       { $sample: { size: 4 } }       // Randomly select 4 products
-    ])
-    .exec(); // Execute the aggregation
+    ]);
 
     // Populate the category and brand fields
     const populatedProducts = await Product.populate(Products, [

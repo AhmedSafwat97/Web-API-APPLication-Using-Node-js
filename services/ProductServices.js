@@ -180,7 +180,9 @@ exports.getProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     // Find the product by ID
-    const product = await Product.findById(id);
+    const product = await Product.findById(id)
+    .populate({ path: 'category', select: 'Name -_id' })
+      .populate({ path: 'brand', select: 'Name -_id' });
 
     if (!product) {
       return res.status(404).json({ msg: "There is no product with this ID" });

@@ -126,20 +126,22 @@ exports.getWishlistItems = asyncHandler(async (req, res) => {
       return res.status(404).json({ error: 'Wishlist not found' });
     }
   
-    // Remove the product from the Wishlist
-    const initialItemCount = wishlist.items.length;
-    wishlist.items = wishlist.items.filter(item => item.product._id.toString() !== productId);
-  
-    // Check if the product was found and removed
-    if (wishlist.items.length === initialItemCount) {
+    // Find the product in the Wishlist
+    const productIndex = wishlist.items.findIndex(item => item.product._id.toString() === productId);
+    if (productIndex === -1) {
       return res.status(404).json({ error: 'Product not found in Wishlist' });
     }
   
+    // Set the IsFav field of the product to false
+    wishlist.items[productIndex].product.IsFav = false;
+    await wishlist.items[productIndex].product.save(); // Save the product with the updated IsFav field
+  
+    // Remove the product from the Wishlist
+    wishlist.items.splice(productIndex, 1);
+  
     // Save the updated Wishlist
-    product.IsFav = false;
     await wishlist.save();
   
     res.status(200).json({ data: wishlist, message: 'Product removed successfully' });
   });
-
 

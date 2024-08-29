@@ -136,6 +136,7 @@ exports.getWishlistItems = asyncHandler(async (req, res) => {
     }
   
     // Save the updated Wishlist
+    product.IsFav = false;
     await wishlist.save();
   
     res.status(200).json({ data: wishlist, message: 'Product removed successfully' });

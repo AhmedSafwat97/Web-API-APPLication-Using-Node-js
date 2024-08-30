@@ -187,33 +187,38 @@ exports.removeFromCart = asyncHandler(async (req, res) => {
   exports.getOrderedItems = asyncHandler(async (req, res) => {
 
     // Extract token from the Authorization header
-const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
-
-if (!token) {
-  return res.status(401).json({ msg: 'Not authorized, token failed' });
-}
-
-const decoded = jwt.verify(token, process.env.JWT_SECRET);
-const userId = decoded.userId;
-
-if (!userId) {
-  return res.status(401).json({ msg: 'Not authorized, token failed' });
+    const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
   
-}
-  // Find the Order for the user
-  const order = await Order.findOne({ user: userId }).populate('items.product');
-
-  if (!order) {
-    return res.status(404).json({ error: 'order not found for this user' });
-  }
-
-  const totalPrice = order.items.reduce((sum, item) => {
+    if (!token) {
+      return res.status(401).json({ msg: 'Not authorized, token failed' });
+    }
+  
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ msg: 'Not authorized, token failed' });
+    }
+  
+    const userId = decoded.userId;
+  
+    if (!userId) {
+      return res.status(401).json({ msg: 'Not authorized, token failed' });
+    }
+  
+    // Find the Order for the user
+    const order = await Order.findOne({ user: userId }).populate('items.product');
+  
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found for this user' });
+    }
+  
+    const totalPrice = order.items.reduce((sum, item) => {
       const product = item.product;
       return sum + (product.price * item.quantity);
     }, 0);
+  
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
-
-
-
-  res.status(200).json({ totalPrice : totalPrice, totalProducts : totalQuantity , data: cart });
-});
+  
+    res.status(200).json({ totalPrice: totalPrice, totalProducts: totalQuantity, data: order.items });
+  });

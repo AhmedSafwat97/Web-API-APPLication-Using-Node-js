@@ -206,19 +206,29 @@ exports.removeFromCart = asyncHandler(async (req, res) => {
       return res.status(401).json({ msg: 'Not authorized, token failed' });
     }
   
-    // Find the Order for the user
-    const order = await Order.findOne({ user: userId }).populate('items.product');
+    // Find all Orders for the user
+    const orders = await Order.find({ user: userId }).populate('items.product');
   
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found for this user' });
+    if (orders.length === 0) {
+      return res.status(404).json({ error: 'No orders found for this user' });
     }
   
-    const totalPrice = order.items.reduce((sum, item) => {
-      const product = item.product;
-      return sum + (product.price * item.quantity);
-    }, 0);
+    // Calculate total price and total quantity for each order
+    const ordersData = orders.map(order => {
+      const totalPrice = order.items.reduce((sum, item) => {
+        const product = item.product;
+        return sum + (product.price * item.quantity);
+      }, 0);
   
-    const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+      const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
   
-    res.status(200).json({ totalPrice: totalPrice, totalProducts: totalQuantity, data: order.items });
+      return {
+        orderId: order._id,
+        totalPrice,
+        totalQuantity,
+        items: order.items
+      };
+    });
+  
+    res.status(200).json({ orders: ordersData });
   });

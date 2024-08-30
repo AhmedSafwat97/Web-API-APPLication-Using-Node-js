@@ -45,14 +45,10 @@ exports.createBrand = asyncHandler(async (req, res) => {
 // @route   GET /api/v1/Brands
 // @access  Public
 exports.getBrands = asyncHandler(async (req, res) => {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.limit * 1 || 6;
-    const skip = (page - 1) * limit;
-  
     // Corrected model reference from `brand` to `Category`
-    const Brands = await Brand.find({}).skip(skip).limit(limit);
+    const Brands = await Brand.find({})
   
-    res.status(200).json({ results: Brands.length, page, data: Brands });
+    res.status(200).json({ data: Brands });
   });
   
   // @desc    Get specific Brand by id
@@ -82,9 +78,25 @@ exports.getBrands = asyncHandler(async (req, res) => {
     });
   });
 
+
+  // exports.getBrandsByCategoryName = asyncHandler(async (req, res) => {
+  //   const { catid } = req.params;
   
-
-
-
-
+  //   // Validate if the catid is a valid ObjectId
+  //   if (!mongoose.Types.ObjectId.isValid(catid)) {
+  //     return res.status(400).json({ msg: "Invalid Category ID" });
+  //   }
   
+  //   // Find the category by ID to ensure it exists
+  //   const category = await Category.findById(catid);
+  
+  //   if (!category) {
+  //     return res.status(404).json({ msg: "Category not found" });
+  //   }
+  
+  //   // Find all brands that belong to this category
+  //   const brands = await Brand.find({ category: catid });
+  
+  //   // Send the array of brands
+  //   res.status(200).json(brands);
+  // });

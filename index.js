@@ -21,6 +21,8 @@ const PaymentRoute = require("./Payment/PaymentRoute");
 const SignRoute = require("./routes/SignRoute");
 const Wishlist = require("./routes/WishlistRoute");
 const Brand = require("./routes/brandRoute");
+const CateggoryBrands = require("./routes/CategoriesBrand");
+
 
 // Connect with db
 dbConnection();
@@ -39,6 +41,9 @@ app.use("/api/v1/Cart", CartRoute);
 app.use("/api/v1/Cart", CartRoute);
 app.use("/api/v1/Wishlist", Wishlist);
 app.use("/api/v1/Brand", Brand);
+app.use("/api/v1/Categorybrands", CateggoryBrands);
+
+
 
 
 // Auth Route

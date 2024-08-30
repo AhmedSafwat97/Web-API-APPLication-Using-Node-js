@@ -22,6 +22,9 @@ const cartSchema = new mongoose.Schema({
       },
     },
   ],
+  baseRedirectLink : {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now,

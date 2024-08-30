@@ -2,7 +2,6 @@ const ConfirmedCart = require('../models/ConfirmedCartsModel');
 const Cart = require('../models/CartModel');
 const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
-
 // @desc    Webhook to handle Paymob payment status
 // @route   POST /api/v1/paymob/webhook
 // @access  Public (Called by Paymob)
@@ -40,7 +39,7 @@ exports.paymentWebhook = asyncHandler(async (req, res) => {
       await Cart.findOneAndDelete({ orderId: order });
 
       // Redirect to success page
-      return res.redirect(`${process.env.REDIRECT_LINK}`);
+      return res.redirect(`${cart.baseRedirectLink}/ConfirmedOrders`);
     } else {
       // Redirect to failure page
       return res.redirect(`https://accept.paymobsolutions.com/api/acceptance/post_pay`);

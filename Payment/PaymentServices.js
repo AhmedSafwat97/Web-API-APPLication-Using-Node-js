@@ -17,7 +17,9 @@ const apiClient = axios.create({
 });
 
 exports.createPaymentLink = asyncHandler(async (req, res) => {
-  const { cartId } = req.params;
+  const { cartId  } = req.params;
+  const { baseFrontServer } = req.query;  // Retrieve baseFrontServer from the query parameters
+
   const {
     floor,
     street,
@@ -72,11 +74,10 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
 
         // Update the cart with the orderId
         cart.orderId = orderId;
+        cart.baseRedirectLink = baseFrontServer; // Set baseRedirectLink to baseFrontServer
 
         // Save the updated cart
         await cart.save();
-
-    console.log("order id" , orderId);
 
     const paymentKeyResponse = await apiClient.post('/acceptance/payment_keys', {
       auth_token: authToken,
@@ -109,7 +110,7 @@ exports.createPaymentLink = asyncHandler(async (req, res) => {
 
   } catch (error) {
     console.error('Payment link creation failed:', error);
-    res.status(500).json({ error: error.message, details: error.response ? error.response.data : null });
+    res.status(500).json({ error: error.message, details: error.details});
   }
 });
 
